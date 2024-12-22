@@ -49,11 +49,10 @@
                 startActivity(intent);
             }
             checkPermissions();
-            askNotificationPermission(this);
         }
 
-
         private void initializeWebView() {
+            askNotificationPermission(this);
             registerPhoneData();
         }
 

